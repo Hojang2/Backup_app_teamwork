@@ -5,20 +5,13 @@ import argparse
 import sys
 import os
 
-parser = argparse.ArgumentParser(description="Backup client application",
-                                 formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('-g' '--graphics', dest='graphics', action='store_true',
-                    help='Enables GUI')
-parser.add_argument('--no-graphics', dest='graphics', action='store_false',
-                    help='Disables GUI')
-parser.set_defaults(graphics=False)
-parser.add_argument('-p' '--path', action='store',
-                    help='Path to directory for backup')
-args = parser.parse_args()
+from cli import Client
 
 
 def main():
     kwargs = {}
+    platform = sys.platform
+    kwargs["platform"] = platform
 
     if args.path:
         if os.path.isdir(args.path):
@@ -27,18 +20,43 @@ def main():
             raise NotADirectoryError("Target path is not directory")
 
     else:
-        if sys.platform == "linux":
+        if platform == "linux":
             kwargs["path"] = "/home/"
-        elif sys.platform.startswith('win'):
+        elif "win" in platform:
             kwargs["path"] = "C:"
+    print(kwargs["path"])
+    if args.output:
+        if os.path.isdir(args.output):
+            kwargs["output"] = args.output
+        else:
+            raise NotADirectoryError("Target output path is not directory")
+    else:
+        kwargs["output"] = ""
 
     if args.graphics:
         pass
         # Starts graphics session.
     else:
-        pass
+        client = Client(kwargs["platform"], kwargs["path"], kwargs["output"])
+        client.backup()
         # Runs only CLI
 
 
+parser = argparse.ArgumentParser(description="Backup client application",
+                                 formatter_class=argparse.RawTextHelpFormatter)
+parser.add_argument('-g' '--graphics', dest='graphics', action='store_true',
+                    help='Enables GUI')
+parser.add_argument('--no-graphics', dest='graphics', action='store_false',
+                    help='Disables GUI')
+parser.set_defaults(graphics=False)
+parser.add_argument('-p', '--path', action='store',
+                    help='Path to directory for backup', default=None)
+parser.add_argument('-o', '--output', action='store',
+                    help='Path where the backup will be stored')
+args = parser.parse_args()
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt as e:
+        pass
