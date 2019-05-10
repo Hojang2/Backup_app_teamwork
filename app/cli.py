@@ -16,8 +16,8 @@ class Client:
         self.get_tree()
         t = time.clock()
         name = "{}Backup_{}.backup".format(self.output, time.ctime())
-        name = name.replace(" ", "_")
-        with open(name, "bw") as f:
+        name = name.replace(" ", "_").replace(":", "-")
+        with open(name, "wb") as f:
             for file in self.files:
                 try:
                     ff = open(file, "rb")
@@ -35,4 +35,7 @@ class Client:
 
         for path, dirs, files in os.walk(self.path):
             for file in files:
-                self.files.append(path + "/" + file)
+                if "win" in self.platform:
+                    self.files.append(path + "\\" + file)
+                else:
+                    self.files.append(path + "/" + file)

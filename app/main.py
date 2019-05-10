@@ -38,6 +38,7 @@ def main():
         # Starts graphics session.
     else:
         client = Client(kwargs["platform"], kwargs["path"], kwargs["output"])
+        print(kwargs["platform"], kwargs["path"], kwargs["output"])
         client.backup()
         # Runs only CLI
 
