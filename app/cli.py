@@ -35,8 +35,14 @@ class Client:
         self.output = output
         self.rest = rest
         
-        self.paths = {}
-        self.dirs = {}
+        if self.rest:
+            self.paths = []
+            self.dirs = []
+            self.files = []
+        else:
+            self.paths = {}
+            self.dirs = {}
+            self.files = None
 
     def backup(self):
         """
@@ -50,7 +56,9 @@ class Client:
         name = name.replace(" ", "_").replace(":", "_")
         with open(name, "bw") as output:
             for directory in self.dirs.keys():
-                output.write("{}\n".format(directory).encode())
+                if directory != self.path:
+                    print("{}\n".format(directory.replace(self.path, "")))
+                    output.write("{}\n".format(directory.replace(self.path, "")).encode())
 
 
                 
@@ -59,13 +67,14 @@ class Client:
                 tmp = ""
                 if path != self.path:
                     tmp = self.tmp
-
+                
                 for file in files:
+
                     try:
                         f = open("{}{}{}".format(path, tmp, file), "rb")
                         print('Backing up ' + file)
                         output.write(b"*" * 16 + b"\n")
-                        output.write("{}{}{}\n".format(path, tmp, file).encode())
+                        output.write("{}{}{}\n".format(path, tmp, file).replace(self.path, "").encode())
                         output.write(b"*" * 16 + b"\n")
                         output.write(f.read() + b"\n")
                         f.close()
@@ -92,7 +101,7 @@ class Client:
 
         for path, dirs, files in os.walk(self.path):
             self.paths[path] = files
-            self.dirs[path] = dirs 
+            self.dirs[path] = dirs
 
     def restore(self):
         """
@@ -106,7 +115,7 @@ class Client:
         with open(self.path, "rb") as file:
             backup = file.read()
         self.split_backup(backup)
-        print(self.dirs)
+
         for i in range(len(self.dirs)):
             try:
                 os.mkdir(self.output + self.dirs[i].decode("utf8"))
@@ -118,15 +127,18 @@ class Client:
                 f.write(self.files[i])
 
     def split_backup(self, backup):
-        backup = backup.split(b"******************************************\n")
-        self.dirs = []
-        backup[0] = backup[0].split(b"\n")[:-1]
-        for i in backup[0]:
-            self.dirs.append(i)
+        backup = backup.split(b"*" * 16 + b"\n")
 
-        for i in range(1, (len(backup)//2)+1, 2):
+        self.dirs = backup[0].split(b"\n")[:-1]
+        del backup[0]
+
+        for i in range(0, len(backup), 2):
             self.paths.append(backup[i].replace(b"\n", b""))
             self.files.append(backup[i + 1])
+
+        print(self.dirs)
+        print(self.paths)
+
 
 
 

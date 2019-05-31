@@ -26,7 +26,6 @@ def main():
             kwargs["path"] = "/home/"
         elif "win" in platform:
             kwargs["path"] = "C:"
-    print(kwargs["path"])
     if arguments.output:
         if os.path.isdir(arguments.output):
             kwargs["output"] = arguments.output
@@ -41,7 +40,6 @@ def main():
     else:
         client = Client(kwargs["platform"], kwargs["path"], kwargs["output"],
                         kwargs["restore"])
-        print(client.rest)
         if client.rest:
             client.restore()
         else:
@@ -64,7 +62,7 @@ args_parser.add_argument('-r', '--restore', action='store_true',
                          help='Restores backup from target path to output',
                          default=False)
 arguments: Namespace = args_parser.parse_args()
-print(type(arguments))
+
 if __name__ == "__main__":
     try:
         main()
