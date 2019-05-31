@@ -26,12 +26,17 @@ class Client:
         :param restore:
         """
         self.platform = platform
+        if "win" in self.platform:
+            self.tmp = "\\"
+        elif self.platform == "linux":
+            self.tmp = "/"
+
         self.path = path
         self.output = output
         self.rest = rest
-        self.files = []
-        self.paths = []
-        self.dirs = []
+        
+        self.paths = {}
+        self.dirs = {}
 
     def backup(self):
         """
@@ -41,31 +46,40 @@ class Client:
         :return:
         """
         self.get_tree()
-        print(self.files)
         name = "{}Backup_{}.backup".format(self.output, time.ctime())
         name = name.replace(" ", "_").replace(":", "_")
-        with open(name, "bw") as output_file:
-            for directory in self.dirs:
-                output_file.write(directory.encode() + b"\n")
-            for i in range(len(self.files)):
-                try:
-                    tmp = open(self.files[i], "rb")
-                    print('Backing up ' + self.files[i])
-                    output_file.write(b"******************************************\n")
-                    output_file.write(self.files[i].replace(self.path, "").encode() + b"\n")
-                    output_file.write(b"******************************************\n")
-                    output_file.write(tmp.read())
-                    tmp.close()
-                except FileNotFoundError as error:
+        with open(name, "bw") as output:
+            for directory in self.dirs.keys():
+                output.write("{}\n".format(directory).encode())
 
-                    print(error)
-                    print("File {} wasn't found".format(self.files[i]))
 
-                except OSError as error:
+                
+            for path in self.paths.keys():
+                files = self.paths[path]
+                tmp = ""
+                if path != self.path:
+                    tmp = self.tmp
 
-                    print(error)
-                    print("File {} wasn't found".format(self.files[i]))
+                for file in files:
+                    try:
+                        f = open("{}{}{}".format(path, tmp, file), "rb")
+                        print('Backing up ' + file)
+                        output.write(b"*" * 16 + b"\n")
+                        output.write("{}{}{}\n".format(path, tmp, file).encode())
+                        output.write(b"*" * 16 + b"\n")
+                        output.write(f.read() + b"\n")
+                        f.close()
+                
+                    except FileNotFoundError as error:
 
+                        print(error)
+                        print("File {}{}{} wasn't found".format(path, tmp, file))
+
+                    except OSError as error:
+
+                        print(error)
+                        print("File {}{}{} wasn't found".format(path, tmp, file))
+                
 
         print("Backup finished in {}".format(time.clock()))
 
@@ -77,17 +91,8 @@ class Client:
         """
 
         for path, dirs, files in os.walk(self.path):
-
-            for dir in dirs:
-                if dir not in self.dirs:
-                    dir = (path + "/" + dir).replace(self.path, "")
-                    if dir[0] == "/":
-                        dir = dir[1:]
-                    self.dirs.append(dir)
-
-            for file in files:
-                if file not in self.files:
-                    self.files.append((path + file))
+            self.paths[path] = files
+            self.dirs[path] = dirs 
 
     def restore(self):
         """
