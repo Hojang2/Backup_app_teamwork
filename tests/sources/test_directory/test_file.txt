@@ -1,0 +1,4 @@
+This is just test file for testing purpose.
+Here you can put your test files and directories. 
+Becouse this folder is for testing you can lost data in this folder.
+
