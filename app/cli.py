@@ -11,10 +11,7 @@ import time
 class Client:
     """
     Client class
-    contain methods:
-        backup
-        get_tree
-        restore
+    contain methods:backup, get_tree, restore
     """
 
     def __init__(self, platform, path, output, rest):
@@ -32,10 +29,13 @@ class Client:
             self.tmp = "/"
 
         self.path = path
+        if not self.path.endswith(self.tmp) and ".backup" not in self.path:
+            self.path += self.tmp
         self.output = output
-        self.rest = rest
-        
-        if self.rest:
+        if not self.output.endswith(self.tmp):
+            self.output += self.tmp
+
+        if rest:
             self.paths = []
             self.dirs = []
             self.files = []
@@ -45,50 +45,52 @@ class Client:
             self.files = None
 
     def backup(self):
-        """
+        """"
         Method for backing up directory
         from path to file, that will be stored
         in output directory
         :return:
         """
-        self.get_tree()
         name = "{}Backup_{}.backup".format(self.output, time.ctime())
         name = name.replace(" ", "_").replace(":", "_")
         with open(name, "bw") as output:
             for directory in self.dirs.keys():
                 if directory != self.path:
                     print("{}\n".format(directory.replace(self.path, "")))
-                    output.write("{}\n".format(directory.replace(self.path, "")).encode())
+                    output.write("{}\n".format(directory
+                                               .replace(self.path, ""))
+                                 .encode())
 
-
-                
-            for path in self.paths.keys():
+            for path in self.paths:
                 files = self.paths[path]
                 tmp = ""
                 if path != self.path:
                     tmp = self.tmp
-                
+
                 for file in files:
 
                     try:
-                        f = open("{}{}{}".format(path, tmp, file), "rb")
+                        data = open("{}{}{}".format(path, tmp, file), "rb")
                         print('Backing up ' + file)
                         output.write(b"*" * 16 + b"\n")
-                        output.write("{}{}{}\n".format(path, tmp, file).replace(self.path, "").encode())
+                        output.write("{}{}{}\n".format(path, tmp, file)
+                                     .replace(self.path, "")
+                                     .encode())
                         output.write(b"*" * 16 + b"\n")
-                        output.write(f.read() + b"\n")
-                        f.close()
-                
+                        output.write(data.read() + b"\n")
+                        data.close()
+
                     except FileNotFoundError as error:
 
                         print(error)
-                        print("File {}{}{} wasn't found".format(path, tmp, file))
+                        print("File {}{}{} wasn't found"
+                              .format(path, tmp, file))
 
                     except OSError as error:
 
                         print(error)
-                        print("File {}{}{} wasn't found".format(path, tmp, file))
-                
+                        print("File {}{}{} wasn't found"
+                              .format(path, tmp, file))
 
         print("Backup finished in {}".format(time.clock()))
 
@@ -112,21 +114,30 @@ class Client:
         but path is now path to the file, not directory
         :return:
         """
-        with open(self.path, "rb") as file:
-            backup = file.read()
-        self.split_backup(backup)
 
         for i in range(len(self.dirs)):
             try:
                 os.mkdir(self.output + self.dirs[i].decode("utf8"))
 
-            except FileExistsError as e:
-                print(e)
+            except FileExistsError as error:
+                print(error)
         for i in range(len(self.paths)):
-            with open(self.output.encode() + self.paths[i], "bw") as f:
-                f.write(self.files[i])
+            with open(self.output.encode() + self.paths[i], "bw") as output:
+                output.write(self.files[i])
 
-    def split_backup(self, backup):
+    def split_backup(self):
+
+        """
+        Method that reads all backup data and splits
+        them into name of files as self.files and
+        directories where are files stored as self.dirs.
+        """
+        try:
+            with open(self.path, "rb") as file:
+                backup = file.read()
+        except FileNotFoundError as error:
+            print(error)
+
         backup = backup.split(b"*" * 16 + b"\n")
 
         self.dirs = backup[0].split(b"\n")[:-1]
@@ -135,12 +146,3 @@ class Client:
         for i in range(0, len(backup), 2):
             self.paths.append(backup[i].replace(b"\n", b""))
             self.files.append(backup[i + 1])
-
-        print(self.dirs)
-        print(self.paths)
-
-
-
-
-
-
