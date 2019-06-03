@@ -44,6 +44,7 @@ def main():
         pass
         # Starts graphics session.
     else:
+<<<<<<< HEAD
         client = Client(kwargs["platform"], kwargs["path"], kwargs["output"],
                         kwargs["restore"])
         if kwargs["restore"]:
@@ -52,6 +53,12 @@ def main():
         else:
             client.get_tree()
             client.backup()
+=======
+        client = Client(kwargs["platform"], kwargs["path"], kwargs["output"])
+        print(kwargs["platform"], kwargs["path"], kwargs["output"])
+        client.backup()
+        # Runs only CLI
+>>>>>>> a4054c6faf052f0d69ef7bbd39cffe619785708c
 
 
 args_parser = ArgumentParser(description="Backup client application",

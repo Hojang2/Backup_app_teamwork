@@ -52,6 +52,7 @@ class Client:
         :return:
         """
         name = "{}Backup_{}.backup".format(self.output, time.ctime())
+<<<<<<< HEAD
         name = name.replace(" ", "_").replace(":", "_")
         with open(name, "bw") as output:
             for directory in self.dirs.keys():
@@ -91,6 +92,20 @@ class Client:
                         print(error)
                         print("File {}{}{} wasn't found"
                               .format(path, tmp, file))
+=======
+        name = name.replace(" ", "_").replace(":", "-")
+        with open(name, "wb") as f:
+            for file in self.files:
+                try:
+                    ff = open(file, "rb")
+                    print('Backing up ' + file)
+                    f.write(ff.read())
+                    ff.close()
+                except FileNotFoundError as e:
+                    print("File {} wasn't found".format(file))
+                except OSError as e:
+                    print("File {} wasn't found".format(file))
+>>>>>>> a4054c6faf052f0d69ef7bbd39cffe619785708c
 
         print("Backup finished in {}".format(time.clock()))
 
@@ -102,6 +117,7 @@ class Client:
         """
 
         for path, dirs, files in os.walk(self.path):
+<<<<<<< HEAD
             self.paths[path] = files
             self.dirs[path] = dirs
 
@@ -146,3 +162,10 @@ class Client:
         for i in range(0, len(backup), 2):
             self.paths.append(backup[i].replace(b"\n", b""))
             self.files.append(backup[i + 1])
+=======
+            for file in files:
+                if "win" in self.platform:
+                    self.files.append(path + "\\" + file)
+                else:
+                    self.files.append(path + "/" + file)
+>>>>>>> a4054c6faf052f0d69ef7bbd39cffe619785708c
