@@ -6,6 +6,7 @@ Module with Client
 
 import os
 import time
+import gzip
 
 
 class Client:
@@ -14,7 +15,7 @@ class Client:
     contain methods:backup, get_tree, restore
     """
 
-    def __init__(self, platform, path, output, rest):
+    def __init__(self, platform, path, output, rest, compression):
         """
         Class Initialization
         :param platform:
@@ -22,6 +23,8 @@ class Client:
         :param output:
         :param restore:
         """
+
+        self.compression = compression
         self.platform = platform
         if "win" in self.platform:
             self.tmp = "\\"
@@ -53,45 +56,50 @@ class Client:
         """
         name = "{}Backup_{}.backup".format(self.output, time.ctime())
         name = name.replace(" ", "_").replace(":", "_")
-        with open(name, "bw") as output:
-            for directory in self.dirs.keys():
-                if directory != self.path:
-                    print("{}\n".format(directory.replace(self.path, "")))
-                    output.write("{}\n".format(directory
-                                               .replace(self.path, ""))
+        if self.compression:
+            print("compressed")
+            output = gzip.open(name, "wb")
+        else:
+            output = open(name, "wb")
+
+        for directory in self.dirs.keys():
+            if directory != self.path:
+                print("{}\n".format(directory.replace(self.path, "")))
+                output.write("{}\n".format(directory
+                                           .replace(self.path, ""))
+                             .encode())
+
+        for path in self.paths:
+            files = self.paths[path]
+            tmp = ""
+            if path != self.path:
+                tmp = self.tmp
+
+            for file in files:
+
+                try:
+                    data = open("{}{}{}".format(path, tmp, file), "rb")
+                    print('Backing up ' + file)
+                    output.write(b"*" * 128 + b"\n")
+                    output.write("{}{}{}\n".format(path, tmp, file)
+                                 .replace(self.path, "")
                                  .encode())
+                    output.write(b"*" * 128 + b"\n")
+                    output.write(data.read() + b"\n")
+                    data.close()
 
-            for path in self.paths:
-                files = self.paths[path]
-                tmp = ""
-                if path != self.path:
-                    tmp = self.tmp
+                except FileNotFoundError as error:
 
-                for file in files:
+                    print(error)
+                    print("File {}{}{} wasn't found"
+                          .format(path, tmp, file))
 
-                    try:
-                        data = open("{}{}{}".format(path, tmp, file), "rb")
-                        print('Backing up ' + file)
-                        output.write(b"*" * 16 + b"\n")
-                        output.write("{}{}{}\n".format(path, tmp, file)
-                                     .replace(self.path, "")
-                                     .encode())
-                        output.write(b"*" * 16 + b"\n")
-                        output.write(data.read() + b"\n")
-                        data.close()
+                except OSError as error:
 
-                    except FileNotFoundError as error:
-
-                        print(error)
-                        print("File {}{}{} wasn't found"
-                              .format(path, tmp, file))
-
-                    except OSError as error:
-
-                        print(error)
-                        print("File {}{}{} wasn't found"
-                              .format(path, tmp, file))
-
+                    print(error)
+                    print("File {}{}{} wasn't found"
+                          .format(path, tmp, file))
+        output.close()
         print("Backup finished in {}".format(time.clock()))
 
     def get_tree(self):
@@ -122,8 +130,12 @@ class Client:
             except FileExistsError as error:
                 print(error)
         for i in range(len(self.paths)):
-            with open(self.output.encode() + self.paths[i], "bw") as output:
-                output.write(self.files[i])
+            try:
+                with open(self.output.encode() +
+                          self.paths[i], "bw") as output:
+                    output.write(self.files[i])
+            except ValueError as error:
+                print("Some error")
 
     def split_backup(self):
 
@@ -133,16 +145,20 @@ class Client:
         directories where are files stored as self.dirs.
         """
         try:
-            with open(self.path, "rb") as file:
-                backup = file.read()
+            if self.compression:
+                file = gzip.open(self.path, "rb")
+            else:
+                file = open(self.path, "rb")
+            backup = file.read()
         except FileNotFoundError as error:
             print(error)
-
-        backup = backup.split(b"*" * 16 + b"\n")
+        file.close()
+        backup = backup.split(b"*" * 128 + b"\n")
 
         self.dirs = backup[0].split(b"\n")[:-1]
         del backup[0]
+        print(len(backup))
+        for i in range(0, len(backup)-1, 2):
 
-        for i in range(0, len(backup), 2):
             self.paths.append(backup[i].replace(b"\n", b""))
             self.files.append(backup[i + 1])
