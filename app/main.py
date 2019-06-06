@@ -18,7 +18,7 @@ def main():
     begining of program
     """
     platform = sys.platform
-    kwargs = {"platform": platform}
+    kwargs = {"platform": platform, "compression": arguments.compression}
     if arguments.restore:
         kwargs["restore"] = True
     else:
@@ -44,21 +44,14 @@ def main():
         pass
         # Starts graphics session.
     else:
-<<<<<<< HEAD
         client = Client(kwargs["platform"], kwargs["path"], kwargs["output"],
-                        kwargs["restore"])
+                        kwargs["restore"], kwargs["compression"])
         if kwargs["restore"]:
             client.split_backup()
             client.restore()
         else:
             client.get_tree()
             client.backup()
-=======
-        client = Client(kwargs["platform"], kwargs["path"], kwargs["output"])
-        print(kwargs["platform"], kwargs["path"], kwargs["output"])
-        client.backup()
-        # Runs only CLI
->>>>>>> a4054c6faf052f0d69ef7bbd39cffe619785708c
 
 
 args_parser = ArgumentParser(description="Backup client application",
@@ -77,6 +70,8 @@ args_parser.add_argument('-o', '--output', action='store',
 args_parser.add_argument('-r', '--restore', action='store_true',
                          help='Restores backup from target path to output',
                          default=False)
+args_parser.add_argument('-c', '--compression', action='store_true',
+                        default=False)
 arguments: Namespace = args_parser.parse_args()
 
 if __name__ == "__main__":
