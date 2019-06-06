@@ -100,7 +100,6 @@ class Client:
                     print(error)
                     print("File {}{}{} wasn't found"
                           .format(path, tmp, file))
-       
         output.close()
         print("Backup finished in {}".format(time.clock()))
 
