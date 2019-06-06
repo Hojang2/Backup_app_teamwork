@@ -19,7 +19,7 @@ class StartingWindow(QtWidgets.QMainWindow):
         self.restore = QtWidgets.QPushButton(self.centralwidget)
         self.restore.setGeometry(QtCore.QRect(620, 350, 100, 100))
         restoreIcon = QtGui.QIcon()
-        restoreIcon.addPixmap(QtGui.QPixmap("../icons/restore_f.png"))
+        restoreIcon.addPixmap(QtGui.QPixmap("icons/restore_f.png"))
         self.restore.setIcon(restoreIcon)
         self.restore.setIconSize(QtCore.QSize(200, 200))
         self.restore.clicked.connect(self.restoreButtonHandle)
@@ -29,7 +29,7 @@ class StartingWindow(QtWidgets.QMainWindow):
         self.backup = QtWidgets.QPushButton(self.centralwidget)
         self.backup.setGeometry(QtCore.QRect(80, 350, 100, 100))
         backupIcon = QtGui.QIcon()
-        backupIcon.addPixmap(QtGui.QPixmap("../icons/backup_f.png"))
+        backupIcon.addPixmap(QtGui.QPixmap("icons/backup_f.png"))
         self.backup.setIcon(backupIcon)
         self.backup.setIconSize(QtCore.QSize(200, 200))
         self.backup.clicked.connect(self.backupButtonHandle)
@@ -38,7 +38,7 @@ class StartingWindow(QtWidgets.QMainWindow):
 
         self.title = QtWidgets.QLabel(self.centralwidget)
         self.title.setGeometry(QtCore.QRect(150, 20, 500, 362))
-        logo = QtGui.QPixmap("../icons/logo.png")
+        logo = QtGui.QPixmap("icons/logo.png")
         self.title.setPixmap(logo)
         self.title.setObjectName("title")
 

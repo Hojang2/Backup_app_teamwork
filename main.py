@@ -9,7 +9,7 @@ from argparse import RawTextHelpFormatter, \
     Namespace, ArgumentParser
 import sys
 import os
-from cli import Client
+from app.cli import Client
 
 
 def main():
