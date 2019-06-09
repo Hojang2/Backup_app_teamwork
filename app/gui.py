@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
-
-# Form implementation generated from reading ui file 'backup_app_design.ui'
-#
-# Created by: PyQt5 UI code generator 5.11.3
-#
-# WARNING! All changes made in this file will be lost!
-
 from PyQt5 import QtCore, QtGui, QtWidgets
-import sys
+import sys, os
+from backup import BackupWindow
+from restore import RestoreWindow
 
 class StartingWindow(QtWidgets.QMainWindow):
-    def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 600)
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
+    def __init__(self):
+        QtWidgets.QMainWindow.__init__(self)
+        
+    def setupUi(self):
+        """
+        Prepares 
+        """
+
+        self.setObjectName("StartingWindow")
+        self.setFixedSize(800, 600)
+        self.centralwidget = QtWidgets.QWidget()
         self.centralwidget.setObjectName("centralwidget")
 
         self.restore = QtWidgets.QPushButton(self.centralwidget)
@@ -23,7 +25,6 @@ class StartingWindow(QtWidgets.QMainWindow):
         self.restore.setIcon(restoreIcon)
         self.restore.setIconSize(QtCore.QSize(200, 200))
         self.restore.clicked.connect(self.restoreButtonHandle)
-        self.backupP = BackupWindow()
         self.restore.setObjectName("restore")
 
         self.backup = QtWidgets.QPushButton(self.centralwidget)
@@ -33,7 +34,6 @@ class StartingWindow(QtWidgets.QMainWindow):
         self.backup.setIcon(backupIcon)
         self.backup.setIconSize(QtCore.QSize(200, 200))
         self.backup.clicked.connect(self.backupButtonHandle)
-        self.restoreP = RestoreWindow()
         self.backup.setObjectName("backup")
 
         self.title = QtWidgets.QLabel(self.centralwidget)
@@ -42,42 +42,37 @@ class StartingWindow(QtWidgets.QMainWindow):
         self.title.setPixmap(logo)
         self.title.setObjectName("title")
 
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        self.setCentralWidget(self.centralwidget)
+
+        self.menubar = QtWidgets.QMenuBar(self)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 26))
         self.menubar.setObjectName("menubar")
+        self.setMenuBar(self.menubar)
 
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar = QtWidgets.QStatusBar(self)
         self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
+        self.setStatusBar(self.statusbar)
 
-        self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        self.retranslateUi()
+        QtCore.QMetaObject.connectSlotsByName(self)
 
-    def retranslateUi(self, MainWindow):
+    def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Teamwork Backup App"))
-
-    def restoreButtonHandle(self):
-        self.backupP.show()
+        self.setWindowTitle(_translate("MainWindow", "Teamwork Backup App"))
 
     def backupButtonHandle(self):
-        self.restoreP.show()
+        self.backupW = BackupWindow()
+        self.backupW.setupUi()
+        self.backupW.show()
 
-class BackupWindow(QtWidgets.QMainWindow):
-    def setupUI(self, MainWindow):
-        pass
-
-class RestoreWindow(QtWidgets.QMainWindow):
-    def setupUI(self, MainWindow):
-        pass
+    def restoreButtonHandle(self):
+        self.restoreW = RestoreWindow()
+        self.restoreW.setupUi()
+        self.restoreW.show()
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    MainWindow.setFixedSize(800, 600)
     ui = StartingWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
+    ui.setupUi()
+    ui.show()
     sys.exit(app.exec_())
