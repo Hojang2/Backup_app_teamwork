@@ -41,8 +41,8 @@ def main():
             raise NotADirectoryError("Target output path is not directory")
 
     if arguments.graphics:
-        pass
         # Starts graphics session.
+        os.system("python gui.py")
     else:
 
         client = Client(kwargs["platform"], kwargs["path"], kwargs["output"],
@@ -61,7 +61,6 @@ args_parser.add_argument('-g', '--graphics', dest='graphics',
                          action='store_true', help='Enables GUI')
 args_parser.add_argument('--no-graphics', dest='graphics',
                          action='store_false', help='Disables GUI')
-args_parser.set_defaults(graphics=False)
 args_parser.add_argument('-p', '--path', action='store',
                          help='Path to directory for backup',
                          default="")
