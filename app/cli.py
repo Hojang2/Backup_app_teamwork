@@ -8,6 +8,10 @@ import os
 import time
 import gzip
 
+import base64
+from Crypto.Cipher import AES
+from Crypto.Hash import SHA256
+from Crypto import Random
 
 class Client:
     """
@@ -55,10 +59,11 @@ class Client:
         :return:
         """
         name = "{}Backup_{}.backup".format(self.output, time.ctime())
-
+        password = self.get_password()
         name = name.replace(" ", "_").replace(":", "_")
         if self.compression:
             print("compressed")
+            name += ".gz"
             output = gzip.open(name, "wb")
         else:
             output = open(name, "wb")
@@ -86,7 +91,7 @@ class Client:
                                  .replace(self.path, "")
                                  .encode())
                     output.write(b"*" * 128 + b"\n")
-                    output.write(data.read() + b"\n")
+                    output.write((self.encrypt(password, data.read() + b"\n")).encode())
                     data.close()
 
                 except FileNotFoundError as error:
@@ -114,6 +119,13 @@ class Client:
             self.paths[path] = files
             self.dirs[path] = dirs
 
+    def get_password(self):
+        while True:
+                password = input("Password: ")
+                if len(password) > 0:
+                    break
+        return password
+
     def restore(self):
         """
         Method for restoring backup.
@@ -123,6 +135,8 @@ class Client:
         but path is now path to the file, not directory
         :return:
         """
+
+        password = self.get_password()
 
         for i in range(len(self.dirs)):
             try:
@@ -134,7 +148,8 @@ class Client:
             try:
                 with open(self.output.encode() +
                           self.paths[i], "bw") as output:
-                    output.write(self.files[i])
+                    print(password, self.files[i])
+                    output.write((self.decrypt(password, self.files[i])))
             except ValueError as error:
                 print("Some error")
 
@@ -163,3 +178,23 @@ class Client:
 
             self.paths.append(backup[i].replace(b"\n", b""))
             self.files.append(backup[i + 1])
+
+    def encrypt(self, key, source):
+        key = SHA256.new(key.encode()).digest()
+        IV = Random.new().read(AES.block_size)
+        encryptor = AES.new(key, AES.MODE_CBC, IV)
+        padding = AES.block_size - len(source) % AES.block_size
+        source += bytes([padding]) * padding
+        data = IV + encryptor.encrypt(source)
+        return base64.b64encode(data).decode("utf8")
+
+    def decrypt(self, key, source):
+        source = base64.b64decode(source)
+        key = SHA256.new(key.encode()).digest()
+        IV = source[:AES.block_size]
+        decryptor = AES.new(key, AES.MODE_CBC, IV)
+        data = decryptor.decrypt(source[AES.block_size:])
+        padding = data[-1]
+        if data[-padding:] != bytes([padding]) * padding:
+            raise ValueError("Invalid padding...")
+        return data[:-padding]
