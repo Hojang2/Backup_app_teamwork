@@ -19,7 +19,7 @@ class Client:
     contain methods:backup, get_tree, restore
     """
 
-    def __init__(self, platform, path, output, rest, compression):
+    def __init__(self, platform, path, output, rest, compression, encryption):
         """
         Class Initialization
         :param platform:
@@ -29,6 +29,7 @@ class Client:
         """
 
         self.compression = compression
+        self.encryption = encryption
         self.platform = platform
         if "win" in self.platform:
             self.tmp = "\\"
@@ -59,7 +60,8 @@ class Client:
         :return:
         """
         name = "{}Backup_{}.backup".format(self.output, time.ctime())
-        password = self.get_password()
+        if self.encryption:
+            password = self.get_password()
         name = name.replace(" ", "_").replace(":", "_")
         if self.compression:
             print("compressed")
@@ -91,7 +93,10 @@ class Client:
                                  .replace(self.path, "")
                                  .encode())
                     output.write(b"*" * 128 + b"\n")
-                    output.write((self.encrypt(password, data.read() + b"\n")).encode())
+                    if self.encryption:
+                        output.write((self.encrypt(password, data.read() + b"\n")).encode())
+                    else:
+                        output.write(data.read() + b"\n")
                     data.close()
 
                 except FileNotFoundError as error:
@@ -135,8 +140,8 @@ class Client:
         but path is now path to the file, not directory
         :return:
         """
-
-        password = self.get_password()
+        if self.encryption:
+            password = self.get_password()
 
         for i in range(len(self.dirs)):
             try:
@@ -147,9 +152,12 @@ class Client:
         for i in range(len(self.paths)):
             try:
                 with open(self.output.encode() +
-                          self.paths[i], "bw") as output:
-                    print(password, self.files[i])
-                    output.write((self.decrypt(password, self.files[i])))
+                        self.paths[i], "bw") as output:
+
+                    if self.encryption:
+                        output.write((self.decrypt(password, self.files[i])))
+                    else:
+                        output.write(self.files[i])
             except ValueError as error:
                 print("Some error")
 
@@ -173,7 +181,6 @@ class Client:
 
         self.dirs = backup[0].split(b"\n")[:-1]
         del backup[0]
-        print(len(backup))
         for i in range(0, len(backup)-1, 2):
 
             self.paths.append(backup[i].replace(b"\n", b""))

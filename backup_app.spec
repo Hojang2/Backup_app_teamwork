@@ -16,6 +16,7 @@ Requires:	python3-time
 Requires:	python3-sys
 Requires:	python3-argparse
 Requires:	python3-PyQt5
+Requires:	python3-crypto
 
 
 %description

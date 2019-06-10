@@ -18,7 +18,7 @@ def main():
     begining of program
     """
     platform = sys.platform
-    kwargs = {"platform": platform, "compression": arguments.compression}
+    kwargs = {"platform": platform, "compression": arguments.compression, "encryption": arguments.encryption}
     if arguments.restore:
         kwargs["restore"] = True
     else:
@@ -46,7 +46,7 @@ def main():
     else:
 
         client = Client(kwargs["platform"], kwargs["path"], kwargs["output"],
-                        kwargs["restore"], kwargs["compression"])
+                        kwargs["restore"], kwargs["compression"], kwargs["encryption"])
         if kwargs["restore"]:
             client.split_backup()
             client.restore()
@@ -71,6 +71,8 @@ args_parser.add_argument('-r', '--restore', action='store_true',
                          help='Restores backup from target path to output',
                          default=False)
 args_parser.add_argument('-c', '--compression', action='store_true',
+                        default=False)
+args_parser.add_argument('-e', '--encryption', action='store_true',
                         default=False)
 arguments: Namespace = args_parser.parse_args()
 
