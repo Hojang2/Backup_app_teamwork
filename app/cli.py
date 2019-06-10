@@ -64,7 +64,6 @@ class Client:
             password = self.get_password()
         name = name.replace(" ", "_").replace(":", "_")
         if self.compression:
-            print("compressed")
             name += ".gz"
             output = gzip.open(name, "wb")
         else:
@@ -171,7 +170,7 @@ class Client:
         try:
             if self.compression:
                 file = gzip.open(self.path, "rb")
-            else:
+        else:
                 file = open(self.path, "rb")
             backup = file.read()
         except FileNotFoundError as error:
