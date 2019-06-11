@@ -18,7 +18,8 @@ def main():
     begining of program
     """
     platform = sys.platform
-    kwargs = {"platform": platform, "compression": arguments.compression, "encryption": arguments.encryption}
+    kwargs = {"platform": platform, "compression": arguments.compression,
+              "encryption": arguments.encryption}
     if arguments.restore:
         kwargs["restore"] = True
     else:
@@ -45,8 +46,7 @@ def main():
         os.system("python gui.py")
     else:
 
-        client = Client(kwargs["platform"], kwargs["path"], kwargs["output"],
-                        kwargs["restore"], kwargs["compression"], kwargs["encryption"])
+        client = Client(kwargs)
         if kwargs["restore"]:
             client.split_backup()
             client.restore()
@@ -55,26 +55,28 @@ def main():
             client.backup()
 
 
-args_parser = ArgumentParser(description="Backup client application",
+ARGS_PARSER = ArgumentParser(description="Backup client application",
                              formatter_class=RawTextHelpFormatter)
-args_parser.add_argument('-g', '--graphics', dest='graphics',
+ARGS_PARSER.add_argument('-g', '--graphics', dest='graphics',
                          action='store_true', help='Enables GUI')
-args_parser.add_argument('--no-graphics', dest='graphics',
+ARGS_PARSER.add_argument('--no-graphics', dest='graphics',
                          action='store_false', help='Disables GUI')
-args_parser.add_argument('-p', '--path', action='store',
+ARGS_PARSER.add_argument('-p', '--path', action='store',
                          help='Path to directory for backup',
                          default="")
-args_parser.add_argument('-o', '--output', action='store',
+ARGS_PARSER.add_argument('-o', '--output', action='store',
                          help='Path where the backup will be stored',
                          default="")
-args_parser.add_argument('-r', '--restore', action='store_true',
+ARGS_PARSER.add_argument('-r', '--restore', action='store_true',
                          help='Restores backup from target path to output',
                          default=False)
-args_parser.add_argument('-c', '--compression', action='store_true',
-                        default=False)
-args_parser.add_argument('-e', '--encryption', action='store_true',
-                        default=False)
-arguments: Namespace = args_parser.parse_args()
+ARGS_PARSER.add_argument('-c', '--compression', action='store_true',
+                         help="Compress files using gzip",
+                         default=False)
+ARGS_PARSER.add_argument('-e', '--encryption', action='store_true',
+                         help="Encrypt files in backup",
+                         default=False)
+arguments: Namespace = ARGS_PARSER.parse_args()
 
 if __name__ == "__main__":
     try:

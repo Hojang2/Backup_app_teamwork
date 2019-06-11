@@ -13,13 +13,14 @@ from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 from Crypto import Random
 
+
 class Client:
     """
     Client class
     contain methods:backup, get_tree, restore
     """
 
-    def __init__(self, platform, path, output, rest, compression, encryption):
+    def __init__(self, settings):
         """
         Class Initialization
         :param platform:
@@ -28,22 +29,25 @@ class Client:
         :param restore:
         """
 
-        self.compression = compression
-        self.encryption = encryption
-        self.platform = platform
-        if "win" in self.platform:
+        self.options = {}
+        self.options["compression"] = settings["compression"]
+        self.options["encryption"] = settings["encryption"]
+
+        if "win" in settings["platform"]:
             self.tmp = "\\"
-        elif self.platform == "linux":
+        else:
             self.tmp = "/"
 
-        self.path = path
+        self.path = settings["path"]
         if not self.path.endswith(self.tmp) and ".backup" not in self.path:
             self.path += self.tmp
-        self.output = output
+
+        self.output = settings["output"]
+
         if not self.output.endswith(self.tmp):
             self.output += self.tmp
 
-        if rest:
+        if settings["restore"]:
             self.paths = []
             self.dirs = []
             self.files = []
@@ -60,10 +64,10 @@ class Client:
         :return:
         """
         name = "{}Backup_{}.backup".format(self.output, time.ctime())
-        if self.encryption:
+        if self.options["encryption"]:
             password = self.get_password()
         name = name.replace(" ", "_").replace(":", "_")
-        if self.compression:
+        if self.options["compression"]:
             name += ".gz"
             output = gzip.open(name, "wb")
         else:
@@ -83,17 +87,19 @@ class Client:
                 tmp = self.tmp
 
             for file in files:
-
+                name = "{}{}{}".format(path, tmp, file)
                 try:
-                    data = open("{}{}{}".format(path, tmp, file), "rb")
-                    print('Backing up ' + file)
+                    data = open(name, "rb")
+                    print('Backing up: ' + name)
                     output.write(b"*" * 128 + b"\n")
-                    output.write("{}{}{}\n".format(path, tmp, file)
+                    output.write(name
                                  .replace(self.path, "")
                                  .encode())
                     output.write(b"*" * 128 + b"\n")
-                    if self.encryption:
-                        output.write((self.encrypt(password, data.read() + b"\n")).encode())
+                    if self.options["encryption"]:
+                        output.write((self.encrypt(password,
+                                                   data.read() + b"\n"))
+                                     .encode())
                     else:
                         output.write(data.read() + b"\n")
                     data.close()
@@ -123,11 +129,15 @@ class Client:
             self.paths[path] = files
             self.dirs[path] = dirs
 
-    def get_password(self):
+    @staticmethod
+    def get_password():
+        """
+        Runs in loop before gets input longer than 0
+        """
         while True:
-                password = input("Password: ")
-                if len(password) > 0:
-                    break
+            password = input("Password: ")
+            if len(password) != "":
+                break
         return password
 
     def restore(self):
@@ -139,24 +149,29 @@ class Client:
         but path is now path to the file, not directory
         :return:
         """
-        if self.encryption:
+        if self.options["encryption"]:
             password = self.get_password()
 
         for i in range(len(self.dirs)):
+            name = self.output + self.dirs[i].decode("utf8")
             try:
-                os.mkdir(self.output + self.dirs[i].decode("utf8"))
+                print("creating directory: " + name)
+                os.mkdir(name)
 
             except FileExistsError as error:
                 print(error)
-        for i in range(len(self.paths)):
-            try:
-                with open(self.output.encode() +
-                        self.paths[i], "bw") as output:
 
-                    if self.encryption:
+        for i in range(len(self.paths)):
+            name = self.output.encode() + self.paths[i]
+            try:
+                print("Restoring file: " + name.decode("utf8"))
+                with open(name, "bw") as output:
+
+                    if self.options["encryption"]:
                         output.write((self.decrypt(password, self.files[i])))
                     else:
                         output.write(self.files[i])
+
             except ValueError as error:
                 print("Some error")
 
@@ -168,9 +183,9 @@ class Client:
         directories where are files stored as self.dirs.
         """
         try:
-            if self.compression:
+            if self.options["compression"]:
                 file = gzip.open(self.path, "rb")
-        else:
+            else:
                 file = open(self.path, "rb")
             backup = file.read()
         except FileNotFoundError as error:
@@ -185,20 +200,30 @@ class Client:
             self.paths.append(backup[i].replace(b"\n", b""))
             self.files.append(backup[i + 1])
 
-    def encrypt(self, key, source):
+    @staticmethod
+    def encrypt(key, source):
+        """
+        Method for encryption of source
+        by key
+        """
         key = SHA256.new(key.encode()).digest()
-        IV = Random.new().read(AES.block_size)
-        encryptor = AES.new(key, AES.MODE_CBC, IV)
+        tmp = Random.new().read(AES.block_size)
+        encryptor = AES.new(key, AES.MODE_CBC, tmp)
         padding = AES.block_size - len(source) % AES.block_size
         source += bytes([padding]) * padding
-        data = IV + encryptor.encrypt(source)
+        data = tmp + encryptor.encrypt(source)
         return base64.b64encode(data).decode("utf8")
 
-    def decrypt(self, key, source):
+    @staticmethod
+    def decrypt(key, source):
+        """
+        Method for decrypting source
+        by key
+        """
         source = base64.b64decode(source)
         key = SHA256.new(key.encode()).digest()
-        IV = source[:AES.block_size]
-        decryptor = AES.new(key, AES.MODE_CBC, IV)
+        tmp = source[:AES.block_size]
+        decryptor = AES.new(key, AES.MODE_CBC, tmp)
         data = decryptor.decrypt(source[AES.block_size:])
         padding = data[-1]
         if data[-padding:] != bytes([padding]) * padding:
