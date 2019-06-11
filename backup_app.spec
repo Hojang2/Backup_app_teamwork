@@ -3,21 +3,14 @@ Version:        1.0
 Release:        1%{?dist}
 Summary:        Program for backup.
 
-License:
+License:	GPLv3+
 URL:            https://github.com/Hojang2/Backup_app_teamwork
 Source0:        %{name}-%{version}.tar.gz
 BuildArch: 	noarch
 
-BuildRequires:
 
-Requires:       python3-gzip
-Requires:	python3-os
-Requires:	python3-time
-Requires:	python3-sys
-Requires:	python3-argparse
-Requires:	python3-PyQt5
-Requires:	python3-crypto
-
+Requires:       python3
+Requires:	bash
 
 %description
 Program for backing up your files, compressing them and
@@ -26,22 +19,19 @@ There is CLI a GUI avalible. This program was created
 as part of school teamwork.
 
 %prep
-%autosetup
+%setup -q
 
 
 %build
-%configure
-%make_build
 
 
 %install
-rm -rf $RPM_BUILD_ROOT
-%make_install
-
+mkdir -p %{buildroot}/%{_bindir}/
+install -m 0755 %{name} %{buildroot}/%{_bindir}/%{name}
 
 %files
-%license add-license-file-here
-%doc add-docs-here
+%license LICENSE
+%{_bindir}/%{name}
 
 
 

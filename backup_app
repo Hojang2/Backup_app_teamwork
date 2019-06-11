@@ -1,0 +1,308 @@
+#!/usr/bin/env python3
+# -*- encoding: utf-8 -*-
+
+"""
+This is the main file in this application.
+It works as controller for cli and gui.
+"""
+from argparse import RawTextHelpFormatter, \
+    Namespace, ArgumentParser
+import sys
+import os
+import time
+import gzip
+
+import base64
+from Crypto.Cipher import AES
+from Crypto.Hash import SHA256
+from Crypto import Random
+
+
+class Client:
+    """
+    Client class
+    contain methods:backup, get_tree, restore
+    """
+
+    def __init__(self, settings):
+        """
+        Class Initialization
+        :param platform:
+        :param path:
+        :param output:
+        :param restore:
+        """
+
+        self.options = {}
+        self.options["compression"] = settings["compression"]
+        self.options["encryption"] = settings["encryption"]
+
+        if "win" in settings["platform"]:
+            self.tmp = "\\"
+        else:
+            self.tmp = "/"
+
+        self.path = settings["path"]
+        if not self.path.endswith(self.tmp) and ".backup" not in self.path:
+            self.path += self.tmp
+
+        self.output = settings["output"]
+
+        if not self.output.endswith(self.tmp):
+            self.output += self.tmp
+
+        if settings["restore"]:
+            self.paths = []
+            self.dirs = []
+            self.files = []
+        else:
+            self.paths = {}
+            self.dirs = {}
+            self.files = None
+
+    def backup(self):
+        """"
+        Method for backing up directory
+        from path to file, that will be stored
+        in output directory
+        :return:
+        """
+        name = "{}Backup_{}.backup".format(self.output, time.ctime())
+        if self.options["encryption"]:
+            password = self.get_password()
+        name = name.replace(" ", "_").replace(":", "_")
+        if self.options["compression"]:
+            name += ".gz"
+            output = gzip.open(name, "wb")
+        else:
+            output = open(name, "wb")
+
+        for directory in self.dirs.keys():
+            if directory != self.path:
+                print("{}\n".format(directory.replace(self.path, "")))
+                output.write("{}\n".format(directory
+                                           .replace(self.path, ""))
+                             .encode())
+
+        for path in self.paths:
+            files = self.paths[path]
+            tmp = ""
+            if path != self.path:
+                tmp = self.tmp
+
+            for file in files:
+                name = "{}{}{}".format(path, tmp, file)
+                try:
+                    data = open(name, "rb")
+                    print('Backing up: ' + name)
+                    output.write(b"*" * 128 + b"\n")
+                    output.write(name
+                                 .replace(self.path, "")
+                                 .encode())
+                    output.write(b"*" * 128 + b"\n")
+                    if self.options["encryption"]:
+                        output.write((self.encrypt(password,
+                                                   data.read() + b"\n"))
+                                     .encode())
+                    else:
+                        output.write(data.read() + b"\n")
+                    data.close()
+
+                except FileNotFoundError as error:
+
+                    print(error)
+                    print("File {}{}{} wasn't found"
+                          .format(path, tmp, file))
+
+                except OSError as error:
+
+                    print(error)
+                    print("File {}{}{} wasn't found"
+                          .format(path, tmp, file))
+        output.close()
+        print("Backup finished in {}".format(time.process_time()))
+
+    def get_tree(self):
+        """
+        Method for getting all directories and
+        subdirectories as self.files and self.paths
+        :return:
+        """
+
+        for path, dirs, files in os.walk(self.path):
+            self.paths[path] = files
+            self.dirs[path] = dirs
+
+    @staticmethod
+    def get_password():
+        """
+        Runs in loop before gets input longer than 0
+        """
+        while True:
+            password = input("Password: ")
+            if len(password) != "":
+                break
+        return password
+
+    def restore(self):
+        """
+        Method for restoring backup.
+        Work as reversed backup method and
+        takes the same arguments
+        as path and output,
+        but path is now path to the file, not directory
+        :return:
+        """
+        if self.options["encryption"]:
+            password = self.get_password()
+
+        for i in range(len(self.dirs)):
+            name = self.output + self.dirs[i].decode("utf8")
+            try:
+                print("creating directory: " + name)
+                os.mkdir(name)
+
+            except FileExistsError as error:
+                print(error)
+
+        for i in range(len(self.paths)):
+            name = self.output.encode() + self.paths[i]
+            try:
+                print("Restoring file: " + name.decode("utf8"))
+                with open(name, "bw") as output:
+
+                    if self.options["encryption"]:
+                        output.write((self.decrypt(password, self.files[i])))
+                    else:
+                        output.write(self.files[i])
+
+            except ValueError as error:
+                print("Some error")
+
+    def split_backup(self):
+
+        """
+        Method that reads all backup data and splits
+        them into name of files as self.files and
+        directories where are files stored as self.dirs.
+        """
+        try:
+            if self.options["compression"]:
+                file = gzip.open(self.path, "rb")
+            else:
+                file = open(self.path, "rb")
+            backup = file.read()
+        except FileNotFoundError as error:
+            print(error)
+        file.close()
+        backup = backup.split(b"*" * 128 + b"\n")
+
+        self.dirs = backup[0].split(b"\n")[:-1]
+        del backup[0]
+        for i in range(0, len(backup)-1, 2):
+
+            self.paths.append(backup[i].replace(b"\n", b""))
+            self.files.append(backup[i + 1])
+
+    @staticmethod
+    def encrypt(key, source):
+        """
+        Method for encryption of source
+        by key
+        """
+        key = SHA256.new(key.encode()).digest()
+        tmp = Random.new().read(AES.block_size)
+        encryptor = AES.new(key, AES.MODE_CBC, tmp)
+        padding = AES.block_size - len(source) % AES.block_size
+        source += bytes([padding]) * padding
+        data = tmp + encryptor.encrypt(source)
+        return base64.b64encode(data).decode("utf8")
+
+    @staticmethod
+    def decrypt(key, source):
+        """
+        Method for decrypting source
+        by key
+        """
+        source = base64.b64decode(source)
+        key = SHA256.new(key.encode()).digest()
+        tmp = source[:AES.block_size]
+        decryptor = AES.new(key, AES.MODE_CBC, tmp)
+        data = decryptor.decrypt(source[AES.block_size:])
+        padding = data[-1]
+        if data[-padding:] != bytes([padding]) * padding:
+            raise ValueError("Invalid padding...")
+        return data[:-padding]
+
+
+def main():
+    """
+    The main method that is called in
+    begining of program
+    """
+    platform = sys.platform
+    kwargs = {"platform": platform, "compression": arguments.compression,
+              "encryption": arguments.encryption}
+    if arguments.restore:
+        kwargs["restore"] = True
+    else:
+        kwargs["restore"] = False
+
+    if arguments.path:
+
+        kwargs["path"] = arguments.path
+
+    else:
+        if platform == "linux":
+            kwargs["path"] = "/home/"
+        elif "win" in platform:
+            kwargs["path"] = "C:"
+
+    if arguments.output:
+        if os.path.isdir(arguments.output):
+            kwargs["output"] = arguments.output
+        else:
+            raise NotADirectoryError("Target output path is not directory")
+
+    if arguments.graphics:
+        # Starts graphics session.
+        os.system("python gui.py")
+    else:
+
+        client = Client(kwargs)
+        if kwargs["restore"]:
+            client.split_backup()
+            client.restore()
+        else:
+            client.get_tree()
+            client.backup()
+
+
+ARGS_PARSER = ArgumentParser(description="Backup client application",
+                             formatter_class=RawTextHelpFormatter)
+ARGS_PARSER.add_argument('-g', '--graphics', dest='graphics',
+                         action='store_true', help='Enables GUI')
+ARGS_PARSER.add_argument('--no-graphics', dest='graphics',
+                         action='store_false', help='Disables GUI')
+ARGS_PARSER.add_argument('-p', '--path', action='store',
+                         help='Path to directory for backup',
+                         default="./")
+ARGS_PARSER.add_argument('-o', '--output', action='store',
+                         help='Path where the backup will be stored',
+                         default="./")
+ARGS_PARSER.add_argument('-r', '--restore', action='store_true',
+                         help='Restores backup from target path to output',
+                         default=False)
+ARGS_PARSER.add_argument('-c', '--compression', action='store_true',
+                         help="Compress files using gzip",
+                         default=False)
+ARGS_PARSER.add_argument('-e', '--encryption', action='store_true',
+                         help="Encrypt files in backup",
+                         default=False)
+arguments: Namespace = ARGS_PARSER.parse_args()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt as error:
+        print(error)

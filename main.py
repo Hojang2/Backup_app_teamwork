@@ -63,10 +63,10 @@ ARGS_PARSER.add_argument('--no-graphics', dest='graphics',
                          action='store_false', help='Disables GUI')
 ARGS_PARSER.add_argument('-p', '--path', action='store',
                          help='Path to directory for backup',
-                         default="")
+                         default="./")
 ARGS_PARSER.add_argument('-o', '--output', action='store',
                          help='Path where the backup will be stored',
-                         default="")
+                         default="./")
 ARGS_PARSER.add_argument('-r', '--restore', action='store_true',
                          help='Restores backup from target path to output',
                          default=False)
