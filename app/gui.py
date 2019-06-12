@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 from PyQt5 import QtCore, QtGui, QtWidgets
-import sys, os
+import sys
+import os
 from backup import BackupWindow
 from restore import RestoreWindow
+
 
 class StartingWindow(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
-        
+
     def setupUi(self):
         """
-        Prepares 
+        Prepares
         """
 
         self.setObjectName("StartingWindow")
@@ -69,6 +71,7 @@ class StartingWindow(QtWidgets.QMainWindow):
         self.restoreW = RestoreWindow()
         self.restoreW.setupUi()
         self.restoreW.show()
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

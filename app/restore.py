@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from PyQt5 import QtCore, QtGui, QtWidgets
-import sys, os
+import sys
+import os
+
 
 class RestoreWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -39,7 +41,7 @@ class RestoreWindow(QtWidgets.QMainWindow):
         self.submitRestore.setGeometry(QtCore.QRect(220, 160, 50, 40))
         self.submitRestore.setObjectName("submit")
         self.submitRestore.clicked.connect(self.RestoreSystemPrint)
-         
+
         self.setCentralWidget(self.centralwidget)
 
         self.menubar = QtWidgets.QMenuBar(self)
@@ -60,7 +62,6 @@ class RestoreWindow(QtWidgets.QMainWindow):
         self._cRestore.setText(_translate("MainWindow", "Compression"))
         self.submitRestore.setText(_translate("MainWindow", "Submit!"))
 
-
     def _pRestoreButtonHandle(self):
         path = self._pRestore.getOpenFileName(self)
         self._pRestoreLabel.setText(path[0])
@@ -71,7 +72,9 @@ class RestoreWindow(QtWidgets.QMainWindow):
 
     def RestoreSystemPrint(self):
         if self._cRestore.isChecked():
-            os.system("python main.py -r -c -p {} -o {}".format(self._pRestoreLabel.text(), self._oRestoreLabel.text()))
+            os.system("python main.py -r -c -p {} -o {}".format(
+                       self._pRestoreLabel.text(), self._oRestoreLabel.text()))
         else:
-            os.system("python main.py -r -p {} -o {}".format(self._pRestoreLabel.text(), self._oRestoreLabel.text()))
+            os.system("python main.py -r -p {} -o {}".format(
+                       self._pRestoreLabel.text(), self._oRestoreLabel.text()))
         self.hide()

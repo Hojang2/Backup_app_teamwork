@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from PyQt5 import QtCore, QtGui, QtWidgets
-import sys, os
+import sys
+import os
+
 
 class BackupWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -71,7 +73,7 @@ class BackupWindow(QtWidgets.QMainWindow):
     def _pBackupFileHandle(self):
         path = self._pBackup.getOpenFileName(self)
         self._pBackupLabel.setText(path[0])
-    
+
     def _pBackupFolderHandle(self):
         path = self._oBackup.getExistingDirectory(self)
         self._pBackupLabel.setText(path)
@@ -82,7 +84,9 @@ class BackupWindow(QtWidgets.QMainWindow):
 
     def BackupSystemPrint(self):
         if self._cBackup.isChecked():
-            os.system("python main.py -c -p {} -o {}".format(self._pBackupLabel.text(), self._oBackupLabel.text()))
+            os.system("python main.py -c -p {} -o {}".format(
+                       self._pBackupLabel.text(), self._oBackupLabel.text()))
         else:
-            os.system("python main.py -p {} -o {}".format(self._pBackupLabel.text(), self._oBackupLabel.text()))
+            os.system("python main.py -p {} -o {}".format(
+                       self._pBackupLabel.text(), self._oBackupLabel.text()))
         self.hide()
